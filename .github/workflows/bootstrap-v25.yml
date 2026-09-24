@@ -1,0 +1,37 @@
+name: Bootstrap TarlaPusula v26 from v25
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/bootstrap-v25.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  bootstrap:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout v26
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Clone v25 baseline
+        run: git clone --depth 1 https://github.com/oguzhanozeren92-debug/tarlapusulav25.git /tmp/tarlapusulav25
+
+      - name: Replace v26 contents with v25 baseline
+        shell: bash
+        run: |
+          set -euo pipefail
+          find . -mindepth 1 -maxdepth 1 ! -name '.git' -exec rm -rf {} +
+          cp -a /tmp/tarlapusulav25/. .
+          rm -rf .git
+          # actions/checkout's .git is restored from a saved copy below
+        
+      - name: Restore repository metadata and commit
+        shell: bash
+        run: |
+          echo 'This step is replaced by bootstrap-v25-v2 workflow.'
