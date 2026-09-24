@@ -1,0 +1,50 @@
+name: Apply TarlaPusula v26 Upload
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.sync/v26_delta.tar.xz.b64'
+
+permissions:
+  contents: write
+
+jobs:
+  apply-upload:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Apply uploaded delta
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -f .sync/v26_delta.tar.xz.b64
+          base64 --decode .sync/v26_delta.tar.xz.b64 > /tmp/v26_delta.tar.xz
+          tar -xJf /tmp/v26_delta.tar.xz -C .
+          rm -f services/model-gateway/app/__init__.py
+          rm -f src/services/agStackGeoId.service.ts
+          rm -f .sync/v26_delta.tar.xz.b64
+          rmdir .sync 2>/dev/null || true
+
+      - name: Verify app build
+        run: |
+          npm ci --no-audit --no-fund
+          npm run build
+
+      - name: Commit uploaded project changes
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add -A -- . ':!.github/workflows'
+          if git diff --cached --quiet; then
+            echo 'No project changes to commit.'
+            exit 0
+          fi
+          git commit -m 'sync: apply latest TarlaPusula uploaded ZIP changes'
+          git push origin HEAD:main
