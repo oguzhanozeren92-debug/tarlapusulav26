@@ -22,12 +22,22 @@ jobs:
       - name: Clone v25 baseline
         run: git clone --depth 1 https://github.com/oguzhanozeren92-debug/tarlapusulav25.git /tmp/tarlapusulav25
 
-      - name: Replace v26 working tree with v25 baseline
+      - name: Replace v26 working tree with v25 baseline except workflows
         shell: bash
         run: |
           set -euo pipefail
+
+          rm -rf /tmp/v26-workflows
+          mkdir -p /tmp/v26-workflows
+          if [ -d .github/workflows ]; then
+            cp -a .github/workflows/. /tmp/v26-workflows/
+          fi
+
           find . -mindepth 1 -maxdepth 1 ! -name '.git' -exec rm -rf {} +
-          (cd /tmp/tarlapusulav25 && tar --exclude='.git' -cf - .) | tar -xf -
+          (cd /tmp/tarlapusulav25 && tar --exclude='.git' --exclude='./.github/workflows' -cf - .) | tar -xf -
+
+          mkdir -p .github/workflows
+          cp -a /tmp/v26-workflows/. .github/workflows/
 
       - name: Commit v25 baseline into v26
         shell: bash
