@@ -1,0 +1,29 @@
+name: Export v25 Baseline
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/export-v25-baseline.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  export:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Clone v25 baseline
+        run: git clone --depth 1 https://github.com/oguzhanozeren92-debug/tarlapusulav25.git baseline
+
+      - name: Remove git metadata
+        run: rm -rf baseline/.git
+
+      - name: Upload baseline artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: tarlapusulav25-baseline
+          path: baseline
+          include-hidden-files: true
+          if-no-files-found: error
