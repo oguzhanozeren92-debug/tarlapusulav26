@@ -4,7 +4,7 @@ on:
   push:
     branches: [main]
     paths:
-      - '.sync/v26_delta.tar.xz.b64'
+      - '.sync/READY'
 
 permissions:
   contents: write
@@ -18,17 +18,18 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Apply uploaded delta
+      - name: Rebuild and apply uploaded delta
         shell: bash
         run: |
           set -euo pipefail
-          test -f .sync/v26_delta.tar.xz.b64
-          base64 --decode .sync/v26_delta.tar.xz.b64 > /tmp/v26_delta.tar.xz
+          test -f .sync/READY
+          test -f .sync/v26_b64_01.txt
+          cat .sync/v26_b64_*.txt > /tmp/v26_delta.b64
+          base64 --decode /tmp/v26_delta.b64 > /tmp/v26_delta.tar.xz
           tar -xJf /tmp/v26_delta.tar.xz -C .
           rm -f services/model-gateway/app/__init__.py
           rm -f src/services/agStackGeoId.service.ts
-          rm -f .sync/v26_delta.tar.xz.b64
-          rmdir .sync 2>/dev/null || true
+          rm -rf .sync
 
       - name: Verify app build
         run: |
