@@ -18,7 +18,7 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Rebuild and apply uploaded patch
+      - name: Rebuild uploaded patch
         shell: bash
         run: |
           set -euo pipefail
@@ -27,8 +27,16 @@ jobs:
           cat .sync/v26_patch_part_*.txt > /tmp/v26_patch.b64
           base64 --decode /tmp/v26_patch.b64 > /tmp/v26_delta.patch.xz
           xz --decompress --stdout /tmp/v26_delta.patch.xz > /tmp/v26_delta.patch
-          git apply --check /tmp/v26_delta.patch
-          git apply --whitespace=nowarn /tmp/v26_delta.patch
+
+      - name: Apply uploaded project changes
+        shell: bash
+        run: |
+          set -euo pipefail
+          git apply --3way --whitespace=nowarn /tmp/v26_delta.patch || {
+            echo "3-way apply failed; retrying with reject mode"
+            git reset --hard HEAD
+            git apply --reject --whitespace=nowarn /tmp/v26_delta.patch
+          }
           rm -rf .sync
 
       - name: Verify app build
